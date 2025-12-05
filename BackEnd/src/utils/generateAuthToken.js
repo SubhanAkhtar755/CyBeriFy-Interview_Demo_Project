@@ -1,14 +1,15 @@
 import jwt from "jsonwebtoken";
-import { ENV } from "../constants/index.js";
 
+const generateAuthToken = (userId) => {
+    const secret = process.env.JWT_SECRET;
 
-const generateAuthToken = async (userId) => {
-    try {
-        const token = jwt.sign({ id: userId }, ENV.JWT_SECRET);
-        return token;
-    } catch (err) {
-        throw new Error("Token generation failed: " + err.message);
+    if (!secret) {
+        throw new Error("JWT_SECRET is missing in .env");
     }
+
+    return jwt.sign({ id: userId }, secret, {
+        expiresIn: "7d",
+    });
 };
 
 export default generateAuthToken;

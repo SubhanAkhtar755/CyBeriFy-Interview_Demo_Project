@@ -1,21 +1,29 @@
 import jwt from "jsonwebtoken";
-import { ENV } from "../constants/index.js";
+import env from "dotenv";
+env.config();
+
 const authMiddleware = (req, res, next) => {
   try {
-    // Try header first
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith("Bearer ") 
-      ? authHeader.split(" ")[1] 
-      : req.cookies?.token;
+    let token;
 
-    if (!token) return res.status(401).json({ error: "Unauthorized: Token missing" });
+    // 1) Check cookie
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
 
-    const decoded = jwt.verify(token, ENV.JWT_SECRET);
-    req.user = decoded;
+    // 2) Fallback to header
+    if (!token && req.headers.authorization) {
+      const parts = req.headers.authorization.split(" ");
+      if (parts.length === 2 && parts[0] === "Bearer") token = parts[1];
+    }
+
+    if (!token) return res.status(401).json({ message: "No token provided" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = { id: decoded.id };
     next();
   } catch (err) {
-    console.error("Token verification failed:", err.message);
-    res.status(401).json({ error: "Unauthorized: Invalid token" });
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 

@@ -6,21 +6,48 @@ import chalk from 'chalk';
 import env from 'dotenv';
 import fileUpload from 'express-fileupload';
 import cookieParser from "cookie-parser";
-
+import cors from 'cors';
+import path from 'path';
 
 const app = express();
 env.config(); // ✅ required for .env
 
 // ✅ Middleware
-app.use(express.json());
+
+// 🚀 Increase body size limit for large payloads (images, etc.)
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ limit: "20mb", extended: true }));
+
 app.use(fileUpload({ useTempFiles: true, tempFileDir: '/tmp/' }));
 app.use(helmet());
 app.use(cookieParser());
 
-// ✅ Test route
-app.get('/', (req, res) => {
-  res.send(new Date().toString());
-});
+// 🚀 Fix CORS properly
+app.use(cors({
+  origin: [
+    "http://localhost:4001", // ❌ invalid URL
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"], 
+  credentials: true
+}));
+
+
+// // ✅ Test route
+// app.get('/', (req, res) => {
+//   res.send(new Date().toString());
+// });
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      connectSrc: ["'self'", "http://localhost:4001"],
+    },
+  })
+);
 
 // ✅ MongoDB connection checks
 mongoose.connection.on("error", (err) => {
@@ -30,15 +57,21 @@ mongoose.connection.on("error", (err) => {
 mongoose.connection.on("open", () => {
   console.log(chalk.magentaBright.bgWhite("----------MongoDB connection successful----------"));
 });
-
 // ✅ Routing
 app.use('/api', routes);
 
-// ❌ REMOVE this cloudinary.config section from here
-// ✅ It should be moved inside utils/cloudinary.js
+const _dirname = path.resolve();
+
+
+
+app.use(express.static(path.join(_dirname, "/FrontEnd/dist")));
+app.get("*", (_, res) => {
+  res.sendFile(path.resolve(_dirname, "FrontEnd", "dist", "index.html"))
+});
+
 
 // ✅ Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; 
 app.listen(PORT, () => {
   console.log('Server started on PORT:', PORT);
 });

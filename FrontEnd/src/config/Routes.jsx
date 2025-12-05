@@ -1,17 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home/Home";
-import Navbar from "../components/Navbar/Navbar";
-import Footer from "../components/Footer/Footer";
+import Login from "../pages/Login";
+import ResetPassword from "../pages/ResetPassword";
 
 const Approuter = () => {
   return (
-    <BrowserRouter>
-      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+           <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
-      <Footer />
-    </BrowserRouter>
   );
 };
 

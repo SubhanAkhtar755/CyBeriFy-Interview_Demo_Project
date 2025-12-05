@@ -3,22 +3,18 @@ import bcrypt from "bcrypt";
 import generateAuthToken from "../../../utils/generateAuthToken.js";
 
 const LoginService = async (email, password) => {
-    // 1. Find user by email
-    const user = await Model.findOne({ email }).select("+password");
+  const user = await Model.findOne({ email }).select("+password");
+  if (!user) throw new Error("Email not found");
 
-    if (!user) throw new Error("Email not found");
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) throw new Error("Incorrect password");
 
-    // 2. Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new Error("Incorrect password");
+  const token = generateAuthToken(user._id);
 
-    // 3. Generate JWT token
-    const token = await generateAuthToken(user._id);
+  // hide password
+  user.password = undefined;
 
-    // 4. Return user without password
-    user.password = undefined;
-
-    return { token, user };
+  return { token, user };
 };
 
 export default LoginService;

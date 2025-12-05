@@ -1,17 +1,14 @@
-// src/modules/user/controllers/logout.js
-
-import LogoutService from "../services/logout.js";
-
 const LogoutController = (req, res) => {
-    try {
-        const result = LogoutService(res);
-        res.status(result.status).json(result);
-    } catch (error) {
-        res.status(500).json({
-            status: 500,
-            message: error.message,
-        });
-    }
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+    res.status(200).json({ status: 200, message: "Logged out" });
+  } catch (err) {
+    res.status(500).json({ status: 500, message: err.message });
+  }
 };
 
 export default LogoutController;
